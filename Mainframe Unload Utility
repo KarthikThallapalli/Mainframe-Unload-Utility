@@ -1,0 +1,76 @@
+%%INCLIB SYSS.CTLM.DATELIB %%INCMEM DYNAMIC   - Gives the current Date, Time       
+%%INCLIB SYSS.CTLM.DATELIB %%INCMEM JMFSYM01         
+//UNL1234  JOB (1234,5678,NM),'TABLE NAME',  
+//         CLASS=0,                                  
+//         MSGCLASS=J,TIME=50,                       
+//         USER=&NOTIFY,TIME=1440                              
+//*                                                  
+/*ROUTE XEQ DB2XSHR                                  
+//   SET LIB01='XXX.PROD.DATALIB'                                       
+//   SET HLQ=HLQ                                                      
+//   SET TM='TM%%TIM0HH.%%TIM0MM.%%TIM0SS'                              
+//   SET DT='%%OSYY.%%OSMM.%%OSDD'                                      
+//   SET JOBNAMEC='ABC'                                            
+//   SET JOBNAMEO='DEF'                                               
+//*                                                                                                                          
+//**********************************************************************
+//*  STEPS TO UNLOAD THE TABLE_NAME                                                                   *
+//**********************************************************************
+//JS010    EXEC PROC1,                                               
+//             RESTART='NEW',                                           
+//             SSID=DB Qualifier,                                               
+//             UID='D2.MUS.ABC'                                    
+//*                                                                     
+//SYSTRACE DD  SYSOUT=*                                                 
+//ULDPARMS DD  *                                                        
++DEGREE(8)                                                              
+//UTLPARMS DD  *                                                        
++FASTSWITCH(YES) +REXXTIME(7200)                                        
++WORKPREFIX(D2.CDB)                                                     
+//*                                                                     
+//SYSREC   DD  DSN=&HLQ..ABC.S.UNLD.DEF(+1),                     
+//             DISP=(NEW,CATLG,DELETE),                                 
+//             UNIT=TAPEC                                               
+//*                                                                     
+//SYSIN    DD  DSN=&LIB01.(Unload Card),DISP=SHR                                   
+//*                                      
+
+
+
+
+PROC1 Code:
+//PROC1 PROC RGN010=0M,                  REGION SIZE                    
+//         UID='INVALID UTILITY ID **',    UTILITY ID                     
+//         RESTART=,                               RESTART PARM                   
+//         SSID=DB2 Qualifier,                  DB2 SUBSYSTEM ID               
+//         RETCD=4,                                 ACCEPTABLE RETURN CODE FROM    
+//*                                                       THE UTILITY                
+//         SOUT='*',                                 SYSOUT CLASS                   
+//         DSNREC='DUMMY',                    SYSREC DSN NAME                
+//         NODE1=ABC,                            NODE FOR ABC                   
+//         NODE2=DB2DM,                       NODE FOR DB2DM                 
+//         LOADCDS='DUMMY,',                OPTIONAL LOAD CNTL CARDS       
+//         RETPD=10                                ADDED FOR INLINE COPY          
+//STEP010 EXEC PGM=CDBUTIL,REGION=&RGN010,                              
+//             PARM=(&SSID.,'&UID.','&RESTART.')                        
+//STEPLIB  DD  DSN=ABC.DEF.LOADLIB,DISP=SHR                        
+//CDBEXEC  DD  DSN=ABC.CDB.DEF.AUTO,DISP=SHR                      
+//         DD  DSN=ABC.CDB.CDBEXEC.NGT,DISP=SHR                       
+//CDBSVR   DD  DISP=SHR,DSN=DB2DM.CDB.&SSID..CDBSRV                     
+//SVRTAPE   DD  DISP=SHR,DSN=DB2DM.CDB.&SSID..CDBSRV(SVRTP&RETPD)       
+//SVRTAPE   DD  DISP=SHR,DSN=DB2DM.CDB.&SSID..CDBSRV(SVRTP&RETPD)       
+//SYSTRACE DD  SYSOUT=&SOUT                                             
+//SYSPRINT DD  SYSOUT=&SOUT                                             
+//UTPRINT  DD  SYSOUT=&SOUT                                             
+//SYSTSPRT DD  SYSOUT=&SOUT                                             
+//SYSOUT   DD  SYSOUT=&SOUT                                             
+//CDBAPARS DD  DUMMY                                                    
+//SYSREC   DD  &LOADCDS.DSN=&DSNREC.,                                   
+//             DISP=OLD                                                 
+//*                                                                     
+//SYSDISC  DD  SYSOUT=*                                                 
+//UTLPARMS  DD DISP=SHR,DSN=&NODE2..&SSID..CMDLIB(CDBUTLP2)
+//*                                                        
+//LODPARMS  DD DISP=SHR,DSN=&NODE2..&SSID..CMDLIB(CDBLODPR)
+//*                                                        
+//SYSIN     DD DDNAME=SYSIN                                
